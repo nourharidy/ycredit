@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/nourharidy/ycredit#readme",
   "dependencies": {
+    "dotenv": "^8.2.0",
     "hardhat": "^2.0.6"
   },
   "devDependencies": {
