@@ -27,9 +27,9 @@ contract StableYieldCredit is ReentrancyGuard {
     /// @notice Total number of tokens staked for yield
     uint public stakedSupply = 0;
 
-    address public owner;
-    uint public singleDepositCap = uint(-1);
-    uint public totalDepositCap = uint(-1);
+    address public operator;
+    uint public singleDepositCap = type(uint).max;
+    uint public totalDepositCap = type(uint).max;
 
     mapping(address => mapping (address => uint)) internal allowances;
     mapping(address => uint) internal balances;
@@ -90,7 +90,7 @@ contract StableYieldCredit is ReentrancyGuard {
     event Withdraw(address indexed creditor, address indexed collateral, uint creditIn, uint creditOut, uint amountOut);
     
     constructor () {
-      owner = msg.sender;
+      operator = msg.sender;
       DOMAINSEPARATOR = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), _getChainId(), address(this)));
     }
     
@@ -98,13 +98,18 @@ contract StableYieldCredit is ReentrancyGuard {
     uint public BASE = 10000;
 
     function setSingleDepositCap(uint _cap) external {
-      require(msg.sender == owner);
+      require(msg.sender == operator);
       singleDepositCap = _cap;
     }
 
     function setTotalDepositCap(uint _cap) external {
-      require(msg.sender == owner);
+      require(msg.sender == operator);
       totalDepositCap = _cap;
+    }
+
+    function setOperator(address _operator) external {
+      require(msg.sender == operator);
+      operator = _operator;
     }
     
     function lastTimeRewardApplicable() public view returns (uint) {
