@@ -436,12 +436,12 @@ contract StableYieldCredit is ReentrancyGuard {
         emit Transfer(dst, address(0), amount);
     }
     
-    function depositAll(IERC20 token) external {
-        _deposit(token, token.balanceOf(msg.sender));
+    function depositAll(IERC20 token) external returns (uint) {
+        return _deposit(token, token.balanceOf(msg.sender));
     }
     
-    function deposit(IERC20 token, uint amount) external {
-        _deposit(token, amount);
+    function deposit(IERC20 token, uint amount) external returns (uint) {
+        return _deposit(token, amount);
     }
     
     function _addLiquidity(
@@ -476,12 +476,15 @@ contract StableYieldCredit is ReentrancyGuard {
         }
     }
     
-    function _deposit(IERC20 token, uint amount) internal {
+    function _deposit(IERC20 token, uint amount) internal returns (uint) {
         uint _value = LINK.getPriceUSD(address(token)) * amount / uint256(10)**token.decimals();
         require(_value > 0, "!value");
         
-        (address _pair, uint amountA,) = _addLiquidity(address(token), address(this), amount, _value);
+        (address _pair, uint amountA, uint amountB) = _addLiquidity(address(token), address(this), amount, _value);
         
+        require(amountB <= _value, 'value too big');
+        _value = amountB;
+
         token.safeTransferFrom(msg.sender, _pair, amountA);
         _mint(_pair, _value); // Amount of scUSD to mint
         
@@ -495,6 +498,7 @@ contract StableYieldCredit is ReentrancyGuard {
         notifyFeeAmount(_fee);
         
         emit Deposit(msg.sender, address(token), _value, amount, _value);
+        return _value;
     }
     
     function withdrawAll(IERC20 token) external {
