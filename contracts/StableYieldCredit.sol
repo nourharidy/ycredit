@@ -27,6 +27,10 @@ contract StableYieldCredit is ReentrancyGuard {
     /// @notice Total number of tokens staked for yield
     uint public stakedSupply = 0;
 
+    address public owner;
+    uint public singleDepositCap = uint(-1);
+    uint public totalDepositCap = uint(-1);
+
     mapping(address => mapping (address => uint)) internal allowances;
     mapping(address => uint) internal balances;
     mapping(address => uint) public stakes;
@@ -86,11 +90,22 @@ contract StableYieldCredit is ReentrancyGuard {
     event Withdraw(address indexed creditor, address indexed collateral, uint creditIn, uint creditOut, uint amountOut);
     
     constructor () {
-        DOMAINSEPARATOR = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), _getChainId(), address(this)));
+      owner = msg.sender;
+      DOMAINSEPARATOR = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), _getChainId(), address(this)));
     }
     
     uint public FEE = 50;
     uint public BASE = 10000;
+
+    function setSingleDepositCap(uint _cap) external {
+      require(msg.sender == owner);
+      singleDepositCap = _cap;
+    }
+
+    function setTotalDepositCap(uint _cap) external {
+      require(msg.sender == owner);
+      totalDepositCap = _cap;
+    }
     
     function lastTimeRewardApplicable() public view returns (uint) {
         return Math.min(block.timestamp, periodFinish);
@@ -244,6 +259,7 @@ contract StableYieldCredit is ReentrancyGuard {
         
         require(amountB <= _value, 'value too big');
         _value = amountB;
+        require(_value <= singleDepositCap, "over singleDepositCap");
 
         token.safeTransferFrom(msg.sender, _pair, amountA);
         _mint(_pair, _value); // Amount of scUSD to mint
@@ -256,7 +272,7 @@ contract StableYieldCredit is ReentrancyGuard {
         _mint(msg.sender, _value - _fee);
         _mint(address(this), _fee);
         notifyFeeAmount(_fee);
-        
+        require(totalSupply / 2 <= totalDepositCap, "over totalDepositCap");
         emit Deposit(msg.sender, address(token), _value, amount, _value);
         return _value;
     }
