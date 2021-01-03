@@ -524,7 +524,7 @@ contract StableYieldCredit is ReentrancyGuard {
         
         collateralCredit[msg.sender][address(token)] -= amount;
         collateral[msg.sender][address(token)] -= _burned;
-        _burn(msg.sender, _amountB+amount); // Amount of scUSD to burn (value of A leaving the system)
+        _burn(msg.sender, amount * 2); // Amount of scUSD to burn (value of A leaving the system)
         
         emit Withdraw(msg.sender, address(token), amount, _amountB, _amountA);
     }
